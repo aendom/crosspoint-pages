@@ -1,0 +1,930 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>[hidden]{display:none!important}</style>
+<title>Pages for CrossPoint</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Turn a PDF or CBZ into an XTCH or XTC file for CrossPoint Reader: comics, manga, scanned books and documents, sized for your e-reader. Runs in your browser.">
+<style>
+/* Fonts ship with the page (fonts/, SIL Open Font License), so nothing loads from a third party. */
+@font-face { font-family: "IBM Plex Sans"; font-weight: 400; font-style: normal; font-display: swap; src: url("fonts/plex-sans-400.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Sans"; font-weight: 500; font-style: normal; font-display: swap; src: url("fonts/plex-sans-500.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Sans"; font-weight: 700; font-style: normal; font-display: swap; src: url("fonts/plex-sans-700.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Sans Condensed"; font-weight: 400; font-style: normal; font-display: swap; src: url("fonts/plex-cond-400.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Sans Condensed"; font-weight: 500; font-style: normal; font-display: swap; src: url("fonts/plex-cond-500.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Sans Condensed"; font-weight: 700; font-style: normal; font-display: swap; src: url("fonts/plex-cond-700.woff2") format("woff2"); }
+/* Same visual language as CrossPoint Calendar: ink on grey paper, selection shown as an inverted cell,
+   a life-size device beside the controls, stacking device-on-top at phone width. */
+:root {
+  --paper: #e4e6e1;      /* page ground: e-paper grey, slight green bias */
+  --panel: #f1f2ee;      /* control surface */
+  --ink: #141516;        /* text, selected controls */
+  --muted: #5d625b;      /* secondary text */
+  --rule: #c3c7bf;       /* hairlines */
+  --bezel: #2c2e2d;      /* device body */
+  --on-ink: #f1f2ee;     /* text on inverted controls */
+  --warn: #8a4b0f;       /* large-file notice */
+  --focus: #3a6fd8;
+  color-scheme: light;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: ui-monospace, "Cascadia Mono", "SF Mono", "SFMono-Regular", Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--paper); color: var(--ink);
+  font: 15px/1.5 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 48px;
+  margin: 0;
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: grid; gap: 28px; }
+
+header { display: grid; gap: 14px; border-bottom: 3px solid var(--ink); padding-bottom: 14px; }
+.head-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+h1 { font: 700 clamp(30px, 5vw, 44px)/1 var(--f-display); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.spec { font: 500 12px/1.4 var(--f-mono); color: var(--muted); margin: 6px 0 0; }
+.lead { margin: 0; max-width: 64ch; font-size: 16px; text-wrap: pretty; }
+.lang-ui { display: flex; gap: 0; }
+
+main { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px; align-items: start; }
+@media (max-width: 860px) {
+  main { grid-template-columns: minmax(0, 1fr); gap: 24px; }
+  .device-col { order: -1; }
+}
+
+/* ---- controls ---- */
+.controls { display: grid; gap: 22px; min-width: 0; }
+.field { display: grid; gap: 8px; min-width: 0; }
+.label { font: 700 11px/1 var(--f-display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1.5px solid var(--ink); width: fit-content; max-width: 100%; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label { padding: 8px 16px; font: 500 14px/1.2 var(--f-body); cursor: pointer; user-select: none;
+  border-right: 1.5px solid var(--ink); }
+.seg label:last-of-type { border-right: 0; }
+.seg input:checked + label { background: var(--ink); color: var(--on-ink); }
+.seg input:focus-visible + label { outline: 2px solid var(--focus); outline-offset: 2px; }
+.seg label:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.seg input:checked + label:hover { background: var(--ink); }
+
+select, .num, .txt { font: 500 14px/1.2 var(--f-body); color: var(--ink); background: var(--panel); border: 1.5px solid var(--ink);
+  padding: 8px 12px; border-radius: 0; max-width: 100%; }
+select { min-width: 280px; justify-self: start; }
+.txt { width: 100%; max-width: 440px; }
+.num { width: 96px; font: 700 16px/1.2 var(--f-display); text-align: center; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+.num::-webkit-outer-spin-button, .num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.custom { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font: 500 14px var(--f-mono); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.hint { font-size: 13px; color: var(--muted); margin: 0; max-width: 60ch; }
+
+.drop { display: grid; gap: 4px; place-items: center; text-align: center; padding: 22px 16px; max-width: 440px;
+  border: 1.5px dashed var(--ink); background: var(--panel); cursor: pointer; }
+.drop:hover, .drop.over { background: color-mix(in srgb, var(--ink) 8%, var(--panel)); }
+.drop:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.drop input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.drop b { font: 700 16px/1.2 var(--f-display); }
+.drop span { font-size: 13px; color: var(--muted); }
+.fileinfo { font: 400 13px/1.4 var(--f-mono); margin: 0; overflow-wrap: anywhere; max-width: 440px; }
+.warn { font-size: 13px; color: var(--warn); margin: 0; max-width: 440px; }
+
+.download { display: grid; gap: 10px; padding-top: 22px; border-top: 1px solid var(--rule); }
+.btn { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; max-width: 440px;
+  padding: 14px 16px; font: 700 16px/1.2 var(--f-display); letter-spacing: 0.02em; cursor: pointer;
+  border: 1.5px solid var(--ink); background: var(--ink); color: var(--on-ink); text-align: left; }
+.btn small { font: 400 12px/1.2 var(--f-mono); opacity: 0.8; letter-spacing: 0; text-align: right; overflow-wrap: anywhere; }
+.btn.secondary { background: transparent; color: var(--ink); }
+.btn:hover { filter: brightness(1.15); }
+.btn.secondary:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); filter: none; }
+.btn:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+.bar { height: 10px; max-width: 440px; border: 1.5px solid var(--ink); background: var(--panel); }
+.bar i { display: block; height: 100%; width: 0; background: var(--ink); }
+.status { font: 400 13px/1.4 var(--f-mono); color: var(--muted); min-height: 1.4em; margin: 0; max-width: 440px; }
+
+.howto { background: var(--panel); border: 1px solid var(--rule); padding: 18px 20px; display: grid; gap: 10px; max-width: 520px; }
+.howto h2 { font: 700 18px/1.2 var(--f-display); margin: 0; }
+.howto ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.howto code, .note code { font: 500 13px var(--f-mono); background: color-mix(in srgb, var(--ink) 9%, transparent); padding: 1px 5px; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+
+/* ---- device ---- */
+.device-col { display: grid; justify-items: center; gap: 10px; }
+.device { background: var(--bezel); padding: 22px 18px 46px; border-radius: 22px;
+  box-shadow: 0 1px 0 rgba(255,255,255,.06) inset, 0 18px 40px -20px rgba(0,0,0,.45); position: relative; }
+.device::after { content: ""; position: absolute; left: 50%; bottom: 17px; width: 46px; height: 6px; margin-left: -23px;
+  border-radius: 3px; background: rgba(255,255,255,.14); }
+.screen { display: block; width: min(360px, 72vw); aspect-ratio: 480 / 800; height: auto; max-width: 100%;
+  background: #fff; image-rendering: auto; }
+.pager { display: inline-flex; align-items: stretch; border: 1.5px solid var(--ink); }
+.pager button { width: 40px; border: 0; background: transparent; color: var(--ink); font: 500 18px/1 var(--f-body); cursor: pointer; padding: 6px 0; }
+.pager button:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+.pager button:disabled { opacity: .35; cursor: default; background: transparent; }
+.pager output { min-width: 130px; padding: 8px 10px; border-inline: 1.5px solid var(--ink); text-align: center;
+  font: 700 14px/1.2 var(--f-display); font-variant-numeric: tabular-nums; }
+.caption { font: 400 12px/1.4 var(--f-mono); color: var(--muted); text-align: center; max-width: 380px; overflow-wrap: anywhere; margin: 0; }
+
+/* ---- formats ---- */
+.formats { display: grid; gap: 16px; border-top: 3px solid var(--ink); padding-top: 18px; }
+.formats h2 { font: 700 24px/1.1 var(--f-display); margin: 0; }
+.fmt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.fmt { background: var(--panel); border: 1px solid var(--rule); padding: 18px 20px; display: grid; gap: 8px; align-content: start; }
+.fmt h3 { font: 700 18px/1.2 var(--f-display); margin: 0; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.fmt h3 small { font: 500 12px/1.4 var(--f-mono); color: var(--muted); align-self: center; }
+.fmt p { margin: 0; text-wrap: pretty; }
+.swatch { display: flex; height: 18px; border: 1.5px solid var(--ink); max-width: 200px; }
+.swatch i { flex: 1; }
+.size { font: 500 13px/1.4 var(--f-mono); color: var(--muted); }
+
+footer { font-size: 13px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 16px; display: flex; flex-wrap: wrap; gap: 8px 20px; }
+footer a, .hint a { color: var(--ink); }
+@media (prefers-reduced-motion: no-preference) { .btn, .seg label, .bar i { transition: background-color .12s, filter .12s, width .2s; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="head-row">
+      <div>
+        <h1 data-t="title">Pages for CrossPoint</h1>
+        <p class="spec" id="spec">Xteink X4 · 480 × 800 · XTCH (4 grays)</p>
+      </div>
+      <div class="seg lang-ui" role="radiogroup" aria-label="Idioma / Language">
+        <input type="radio" name="ui" id="ui-es" value="es"><label for="ui-es">ES</label>
+        <input type="radio" name="ui" id="ui-en" value="en"><label for="ui-en">EN</label>
+      </div>
+    </div>
+    <p class="lead" data-t="lead">Turn a PDF or CBZ into a file your CrossPoint reader opens page by page: comics, manga, scanned books and documents. Every page is resized to your reader's screen and converted to its grays, so it looks the same here as on the device.</p>
+  </header>
+
+  <main>
+    <section class="controls" aria-label="Options">
+
+      <div class="field">
+        <span class="label" data-t="file">File</span>
+        <label class="drop" id="drop">
+          <input type="file" id="file" accept=".pdf,.cbz,application/pdf,application/vnd.comicbook+zip,application/zip">
+          <b data-t="dropTitle">Drop a PDF or CBZ here</b>
+          <span data-t="dropSub">or click to choose a file. It stays on your computer.</span>
+        </label>
+        <p class="fileinfo" id="fileinfo" hidden></p>
+        <p class="warn" id="bigwarn" data-t="bigWarn" hidden>Large file. It works best on a computer: on a phone the browser may run out of memory.</p>
+      </div>
+
+      <div class="field">
+        <label class="label" for="device" data-t="device">Device</label>
+        <select id="device"></select>
+        <div class="custom" id="custom" hidden>
+          <input class="num" type="number" id="cw" min="100" max="2048" inputmode="numeric" aria-label="Width">
+          <span>×</span>
+          <input class="num" type="number" id="ch" min="100" max="2048" inputmode="numeric" aria-label="Height">
+          <span data-t="px">px, portrait</span>
+        </div>
+        <p class="hint" data-t="deviceHint">CrossPoint shows each page pixel for pixel without scaling, so the file must match your screen.</p>
+      </div>
+
+      <div class="field">
+        <span class="label" data-t="format">Format</span>
+        <div class="seg" role="radiogroup">
+          <input type="radio" name="fmt" id="f-xtch" value="xtch"><label for="f-xtch" data-t="fXtch">XTCH · 4 grays</label>
+          <input type="radio" name="fmt" id="f-xtc" value="xtc"><label for="f-xtc" data-t="fXtc">XTC · black and white</label>
+        </div>
+        <p class="hint"><span data-t="fmtHint">Not sure? Keep XTCH.</span> <a href="#formats" data-t="fmtMore">What's the difference?</a></p>
+      </div>
+
+      <div class="field">
+        <span class="label" data-t="fit">Page fit</span>
+        <div class="seg" role="radiogroup">
+          <input type="radio" name="fit" id="fit-fit" value="fit"><label for="fit-fit" data-t="fitFit">Whole page</label>
+          <input type="radio" name="fit" id="fit-w" value="width"><label for="fit-w" data-t="fitW">Fill width</label>
+          <input type="radio" name="fit" id="fit-s" value="screen"><label for="fit-s" data-t="fitS">Fill screen</label>
+        </div>
+        <p class="hint" data-t="fitHint">Whole page never cuts anything. The fill options make the page bigger and crop the edges.</p>
+      </div>
+
+      <div class="field">
+        <span class="label" data-t="trim">Margins</span>
+        <div class="seg" role="radiogroup">
+          <input type="radio" name="trim" id="t-auto" value="auto"><label for="t-auto" data-t="trimAuto">Trim white margins</label>
+          <input type="radio" name="trim" id="t-keep" value="keep"><label for="t-keep" data-t="trimKeep">Keep</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="label" data-t="spread">Wide pages</span>
+        <div class="seg" role="radiogroup">
+          <input type="radio" name="spread" id="s-keep" value="keep"><label for="s-keep" data-t="spKeep">Keep</label>
+          <input type="radio" name="spread" id="s-rot" value="rotate"><label for="s-rot" data-t="spRot">Rotate</label>
+          <input type="radio" name="spread" id="s-split" value="split"><label for="s-split" data-t="spSplit">Split in two</label>
+        </div>
+        <p class="hint" data-t="spreadHint">For double-page spreads. Rotate turns them sideways so they fill the screen: turn the reader to read them.</p>
+      </div>
+
+      <div class="field">
+        <span class="label" data-t="dir">Reading direction</span>
+        <div class="seg" role="radiogroup">
+          <input type="radio" name="dir" id="d-ltr" value="ltr"><label for="d-ltr" data-t="ltr">Left to right</label>
+          <input type="radio" name="dir" id="d-rtl" value="rtl"><label for="d-rtl" data-t="rtl">Right to left (manga)</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="booktitle" data-t="bookTitle">Title on the reader</label>
+        <input class="txt" type="text" id="booktitle" maxlength="120" autocomplete="off">
+      </div>
+
+      <div class="download">
+        <button class="btn" id="go" type="button" disabled><span data-t="go">Convert and download</span><small id="outname"></small></button>
+        <button class="btn secondary" id="cancel" type="button" hidden><span data-t="cancel">Cancel</span></button>
+        <div class="bar" id="bar" hidden><i id="barfill"></i></div>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+      </div>
+
+      <div class="howto">
+        <h2 data-t="howTitle">How to put it on the reader</h2>
+        <ol>
+          <li data-t="how1">Convert and download the file.</li>
+          <li data-t="how2">Copy it to the SD card, for example to a <code>/comics</code> folder.</li>
+          <li data-t="how3">On the reader, open it from <b>Browse Files</b>.</li>
+        </ol>
+        <p class="note" data-t="howMem">Everything happens in your browser: the file is never uploaded. Files of 100 MB or more convert fine on a computer. On a phone, especially an iPhone, the browser may run out of memory with large files, so use a computer for those.</p>
+      </div>
+    </section>
+
+    <div class="device-col">
+      <div class="device"><canvas class="screen" id="screen" width="480" height="800" aria-label="Preview"></canvas></div>
+      <div class="pager">
+        <button type="button" id="prev" aria-label="Previous page">‹</button>
+        <output id="pageno">—</output>
+        <button type="button" id="next" aria-label="Next page">›</button>
+      </div>
+      <p class="caption" id="caption">480 × 800</p>
+    </div>
+  </main>
+
+  <section class="formats" id="formats" aria-labelledby="f-title">
+    <h2 id="f-title" data-t="fTitle">XTCH or XTC?</h2>
+    <p class="hint" data-t="fIntro">Both are CrossPoint's own page formats: each page is stored ready to display, so pages turn without the reader having to lay anything out. They differ in how many shades each pixel can have.</p>
+    <div class="fmt-grid">
+      <div class="fmt">
+        <h3><span data-t="xtchName">XTCH · 4 grays</span><small data-t="recommended">recommended</small></h3>
+        <div class="swatch" aria-hidden="true"><i style="background:#000"></i><i style="background:#555"></i><i style="background:#aaa"></i><i style="background:#fff"></i></div>
+        <p data-t="xtchBody">Each pixel can be white, light gray, dark gray or black. Shading, screentones and photos look close to the original. Files are about twice as large, and turning a page takes a moment longer.</p>
+        <p class="size" id="size-xtch"></p>
+      </div>
+      <div class="fmt">
+        <h3><span data-t="xtcName">XTC · black and white</span><small>1-bit</small></h3>
+        <div class="swatch" aria-hidden="true"><i style="background:#000"></i><i style="background:#fff"></i></div>
+        <p data-t="xtcBody">Each pixel is pure black or white, and grays are simulated with a fine dot pattern. Files are smaller and pages turn faster. Best for line art, text and high-contrast comics.</p>
+        <p class="size" id="size-xtc"></p>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span data-t="foot">Made for <a href="https://crosspointreader.com/" target="_blank" rel="noopener">CrossPoint Reader</a>. Not affiliated with the project.</span>
+    <a href="https://github.com/aendom/crosspoint-pages" target="_blank" rel="noopener">github.com/aendom/crosspoint-pages</a>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+"use strict";
+// ---------------------------------------------------------------- text
+const UI = {
+  en: {
+    title: "Pages for CrossPoint",
+    lead: "Turn a PDF or CBZ into a file your CrossPoint reader opens page by page: comics, manga, scanned books and documents. Every page is resized to your reader's screen and converted to its grays, so it looks the same here as on the device.",
+    file: "File", dropTitle: "Drop a PDF or CBZ here", dropSub: "or click to choose a file. It stays on your computer.",
+    bigWarn: "Large file. It works best on a computer: on a phone the browser may run out of memory.",
+    device: "Device", px: "px, portrait", custom: "Custom size",
+    deviceHint: "CrossPoint shows each page pixel for pixel without scaling, so the file must match your screen.",
+    format: "Format", fXtch: "XTCH · 4 grays", fXtc: "XTC · black and white",
+    fmtHint: "Not sure? Keep XTCH.", fmtMore: "What's the difference?",
+    fit: "Page fit", fitFit: "Whole page", fitW: "Fill width", fitS: "Fill screen",
+    fitHint: "Whole page never cuts anything. The fill options make the page bigger and crop the edges.",
+    trim: "Margins", trimAuto: "Trim white margins", trimKeep: "Keep",
+    spread: "Wide pages", spKeep: "Keep", spRot: "Rotate", spSplit: "Split in two",
+    spreadHint: "For double-page spreads. Rotate turns them sideways so they fill the screen: turn the reader to read them.",
+    dir: "Reading direction", ltr: "Left to right", rtl: "Right to left (manga)",
+    bookTitle: "Title on the reader",
+    go: "Convert and download", cancel: "Cancel",
+    howTitle: "How to put it on the reader",
+    how1: "Convert and download the file.",
+    how2: "Copy it to the SD card, for example to a <code>/comics</code> folder.",
+    how3: "On the reader, open it from <b>Browse Files</b>.",
+    howMem: "Everything happens in your browser: the file is never uploaded. Files of 100 MB or more convert fine on a computer. On a phone, especially an iPhone, the browser may run out of memory with large files, so use a computer for those.",
+    fTitle: "XTCH or XTC?",
+    fIntro: "Both are CrossPoint's own page formats: each page is stored ready to display, so pages turn without the reader having to lay anything out. They differ in how many shades each pixel can have.",
+    xtchName: "XTCH · 4 grays", recommended: "recommended",
+    xtchBody: "Each pixel can be white, light gray, dark gray or black. Shading, screentones and photos look close to the original. Files are about twice as large, and turning a page takes a moment longer.",
+    xtcName: "XTC · black and white",
+    xtcBody: "Each pixel is pure black or white, and grays are simulated with a fine dot pattern. Files are smaller and pages turn faster. Best for line art, text and high-contrast comics.",
+    perPage: (kb, dev) => `About ${kb} KB per page on the ${dev}.`,
+    perBook: (mb, n) => ` About ${mb} MB for your ${n} pages.`,
+    foot: 'Made for <a href="https://crosspointreader.com/" target="_blank" rel="noopener">CrossPoint Reader</a>. Not affiliated with the project.',
+    specGray: "XTCH (4 grays)", specBw: "XTC (black and white)",
+    pages: (n) => `${n} page${n === 1 ? "" : "s"}`,
+    page: "p.", empty: "No file yet",
+    loading: "Opening the file…", previewing: "Preparing the preview…",
+    converting: (i, n) => `Converting page ${i} of ${n}…`,
+    building: "Putting the file together…",
+    done: (name, n, sz) => `Downloaded: ${name} · ${n} pages · ${sz}`,
+    cancelled: "Conversion cancelled.",
+    declined: "Download cancelled.", failed: "Could not download: ",
+    zipped: "Here the file comes inside a ZIP. On the GitHub page it downloads directly.",
+    badType: "That file isn't a PDF or CBZ. Choose a .pdf or .cbz file.",
+    noImages: "That CBZ has no images inside. Check the file and try again.",
+    password: "That PDF is password-protected. Remove the password and try again.",
+    openFail: "Couldn't open that file. It may be damaged. Try another copy.",
+    noLib: "The PDF reader didn't load. Check your connection and reload the page.",
+    pageFail: (n) => `Page ${n} couldn't be read, so it was left blank.`,
+    tooMany: "That's more than 65,535 pages, the most one file can hold. Split the document first.",
+    split: (a, b) => `${a}/${b}`,
+    drawHint: "Drop a PDF or CBZ",
+  },
+  es: {
+    title: "Páginas para CrossPoint",
+    lead: "Convierte un PDF o CBZ en un archivo que tu lector CrossPoint abre página por página: comics, manga, libros escaneados y documentos. Cada página se ajusta a la pantalla de tu lector y a sus grises, así que se ve aquí igual que en el aparato.",
+    file: "Archivo", dropTitle: "Suelta aquí un PDF o CBZ", dropSub: "o haz clic para elegir un archivo. Se queda en tu computadora.",
+    bigWarn: "Archivo grande. Funciona mejor en una computadora: en un celular el navegador puede quedarse sin memoria.",
+    device: "Dispositivo", px: "px, vertical", custom: "Tamaño personalizado",
+    deviceHint: "CrossPoint muestra cada página píxel por píxel, sin escalar, así que el archivo tiene que coincidir con tu pantalla.",
+    format: "Formato", fXtch: "XTCH · 4 grises", fXtc: "XTC · blanco y negro",
+    fmtHint: "¿No sabes cuál? Deja XTCH.", fmtMore: "¿Cuál es la diferencia?",
+    fit: "Ajuste de página", fitFit: "Página completa", fitW: "Llenar ancho", fitS: "Llenar pantalla",
+    fitHint: "Página completa nunca recorta nada. Las opciones de llenar hacen la página más grande y recortan las orillas.",
+    trim: "Márgenes", trimAuto: "Recortar márgenes blancos", trimKeep: "Conservar",
+    spread: "Páginas anchas", spKeep: "Conservar", spRot: "Rotar", spSplit: "Partir en dos",
+    spreadHint: "Para páginas dobles. Rotar las acuesta para que llenen la pantalla: gira el lector para leerlas.",
+    dir: "Sentido de lectura", ltr: "Izquierda a derecha", rtl: "Derecha a izquierda (manga)",
+    bookTitle: "Título en el lector",
+    go: "Convertir y descargar", cancel: "Cancelar",
+    howTitle: "Cómo ponerlo en el lector",
+    how1: "Convierte y descarga el archivo.",
+    how2: "Cópialo a la tarjeta SD, por ejemplo a una carpeta <code>/comics</code>.",
+    how3: "En el lector, ábrelo desde <b>Browse Files</b>.",
+    howMem: "Todo pasa en tu navegador: el archivo nunca se sube a ningún lado. Archivos de 100 MB o más se convierten sin problema en una computadora. En un celular, sobre todo en iPhone, el navegador puede quedarse sin memoria con archivos grandes; para esos usa una computadora.",
+    fTitle: "¿XTCH o XTC?",
+    fIntro: "Los dos son formatos propios de CrossPoint: cada página se guarda lista para mostrarse, así que se pasan sin que el lector tenga que acomodar nada. La diferencia está en cuántos tonos puede tener cada píxel.",
+    xtchName: "XTCH · 4 grises", recommended: "recomendado",
+    xtchBody: "Cada píxel puede ser blanco, gris claro, gris oscuro o negro. Sombras, tramas y fotos se ven cerca del original. Los archivos pesan como el doble y pasar de página tarda un poco más.",
+    xtcName: "XTC · blanco y negro",
+    xtcBody: "Cada píxel es negro o blanco puro, y los grises se simulan con un patrón de puntos fino. Los archivos pesan menos y las páginas pasan más rápido. Ideal para dibujo de línea, texto y comics de alto contraste.",
+    perPage: (kb, dev) => `Unos ${kb} KB por página en el ${dev}.`,
+    perBook: (mb, n) => ` Unos ${mb} MB para tus ${n} páginas.`,
+    foot: 'Hecho para <a href="https://crosspointreader.com/" target="_blank" rel="noopener">CrossPoint Reader</a>. Sin relación oficial con el proyecto.',
+    specGray: "XTCH (4 grises)", specBw: "XTC (blanco y negro)",
+    pages: (n) => `${n} página${n === 1 ? "" : "s"}`,
+    page: "p.", empty: "Sin archivo",
+    loading: "Abriendo el archivo…", previewing: "Preparando la vista previa…",
+    converting: (i, n) => `Convirtiendo página ${i} de ${n}…`,
+    building: "Armando el archivo…",
+    done: (name, n, sz) => `Descargado: ${name} · ${n} páginas · ${sz}`,
+    cancelled: "Conversión cancelada.",
+    declined: "Descarga cancelada.", failed: "No se pudo descargar: ",
+    zipped: "Aquí el archivo va dentro de un ZIP. En la página de GitHub se descarga directo.",
+    badType: "Ese archivo no es PDF ni CBZ. Elige un archivo .pdf o .cbz.",
+    noImages: "Ese CBZ no tiene imágenes adentro. Revisa el archivo e inténtalo de nuevo.",
+    password: "Ese PDF tiene contraseña. Quítasela e inténtalo de nuevo.",
+    openFail: "No se pudo abrir ese archivo. Puede estar dañado. Prueba con otra copia.",
+    noLib: "El lector de PDF no cargó. Revisa tu conexión y recarga la página.",
+    pageFail: (n) => `La página ${n} no se pudo leer y quedó en blanco.`,
+    tooMany: "Son más de 65,535 páginas, el máximo que cabe en un archivo. Divide el documento primero.",
+    split: (a, b) => `${a}/${b}`,
+    drawHint: "Suelta un PDF o CBZ",
+  },
+};
+
+// Screen sizes from the CrossPoint firmware and its display SDK, in portrait (width × height).
+const DEVICES = [
+  { id: "x4",        name: "Xteink X4 / X4 Pro / X4 Classic", short: "Xteink X4", w: 480, h: 800 },
+  { id: "x3",        name: "Xteink X3",                       short: "Xteink X3", w: 528, h: 792 },
+  { id: "papermono", name: "M5 PaperMono / PaperMono Lite",   short: "PaperMono", w: 480, h: 800 },
+  { id: "sticky",    name: "Seeed reTerminal Sticky",         short: "Sticky",    w: 480, h: 800 },
+  { id: "picco",     name: "Boox Picco",                      short: "Picco",     w: 480, h: 800 },
+  { id: "metalio",   name: "Metalio E-Ink 4",                 short: "E-Ink 4",   w: 480, h: 800 },
+  { id: "eego",      name: "EEGOREAD A4",                     short: "EEGOREAD A4", w: 552, h: 768 },
+  { id: "custom",    name: null,                              short: null,        w: 480, h: 800 },
+];
+
+// ---------------------------------------------------------------- state
+const $ = (s) => document.querySelector(s);
+const state = { ui: null, device: "x4", cw: 480, ch: 800, fmt: "xtch", fit: "fit", trim: "auto", spread: "rotate", dir: "ltr" };
+try { const saved = JSON.parse(localStorage.getItem("cp-pages") || "null"); if (saved) Object.assign(state, saved); }
+catch (e) { /* storage unavailable: defaults */ }
+if (!UI[state.ui]) state.ui = (navigator.language || "en").slice(0, 2) === "es" ? "es" : "en";
+function persist() { try { localStorage.setItem("cp-pages", JSON.stringify(state)); } catch (e) {} }
+const t = (k) => UI[state.ui][k];
+
+function device() { return DEVICES.find(d => d.id === state.device) || DEVICES[0]; }
+function size() {
+  const d = device();
+  if (d.id !== "custom") return { W: d.w, H: d.h };
+  return { W: clampSize(state.cw), H: clampSize(state.ch) };
+}
+function clampSize(v) { return Math.min(2048, Math.max(100, Math.round(+v) || 480)); }
+function devLabel() { const d = device(); return d.id === "custom" ? t("custom") : d.short; }
+
+// ---------------------------------------------------------------- sources (PDF via pdf.js, CBZ via JSZip)
+let source = null;   // { kind, count, title, raster(i, side) → canvas }
+
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+}
+
+function newCanvas(w, h) {
+  const c = document.createElement("canvas");
+  c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h));
+  return c;
+}
+function ctx2d(c) { return c.getContext("2d", { willReadFrequently: true }); }
+function release(c) { if (c) { c.width = 0; c.height = 0; } }
+
+async function openPdf(file) {
+  if (!window.pdfjsLib) throw { code: "noLib" };
+  const data = new Uint8Array(await file.arrayBuffer());
+  let doc;
+  try { doc = await pdfjsLib.getDocument({ data, isEvalSupported: false }).promise; }
+  catch (e) { throw { code: e && e.name === "PasswordException" ? "password" : "openFail" }; }
+  return {
+    kind: "pdf", count: doc.numPages,
+    async raster(i, side) {
+      const page = await doc.getPage(i + 1);
+      const v1 = page.getViewport({ scale: 1 });
+      let s = side / Math.max(v1.width, v1.height);
+      const cap = 16e6;                                   // keep huge pages under ~16 MP
+      if (v1.width * v1.height * s * s > cap) s = Math.sqrt(cap / (v1.width * v1.height));
+      const vp = page.getViewport({ scale: s });
+      const c = newCanvas(vp.width, vp.height), g = ctx2d(c);
+      g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+      await page.render({ canvasContext: g, viewport: vp, background: "rgb(255,255,255)" }).promise;
+      page.cleanup();
+      return c;
+    },
+    close() { doc.destroy(); },
+  };
+}
+
+async function openCbz(file) {
+  if (!window.JSZip) throw { code: "noLib" };
+  let zip;
+  try { zip = await JSZip.loadAsync(file); } catch (e) { throw { code: "openFail" }; }
+  const names = Object.keys(zip.files)
+    .filter(n => !zip.files[n].dir && /\.(jpe?g|png|gif|webp|bmp|avif)$/i.test(n) && !/(^|\/)(__MACOSX|\.)/.test(n))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+  if (!names.length) throw { code: "noImages" };
+  return {
+    kind: "cbz", count: names.length,
+    async raster(i, side) {
+      const blob = await zip.files[names[i]].async("blob");
+      const bmp = await createImageBitmap(blob);
+      const s = Math.min(1, side / Math.max(bmp.width, bmp.height));
+      const c = newCanvas(bmp.width * s, bmp.height * s), g = ctx2d(c);
+      g.fillStyle = "#fff"; g.fillRect(0, 0, c.width, c.height);
+      g.imageSmoothingQuality = "high";
+      g.drawImage(bmp, 0, 0, c.width, c.height);
+      bmp.close();
+      return c;
+    },
+    close() {},
+  };
+}
+
+// ---------------------------------------------------------------- page pipeline
+// raster → trim margins → handle wide pages → fit to the screen → dither to the reader's grays.
+const lum = (p, i) => (77 * p[i] + 150 * p[i + 1] + 29 * p[i + 2]) >> 8;
+
+// Bounding box of the "ink" on a page, measured on a small copy for speed.
+function inkBox(src) {
+  const s = Math.min(1, 600 / Math.max(src.width, src.height));
+  const c = newCanvas(src.width * s, src.height * s), g = ctx2d(c);
+  g.drawImage(src, 0, 0, c.width, c.height);
+  const { width: w, height: h } = c, p = g.getImageData(0, 0, w, h).data;
+  const L = new Uint8Array(w * h), hist = new Uint32Array(256);
+  for (let j = 0, i = 0; j < w * h; j++, i += 4) { L[j] = lum(p, i); hist[L[j]]++; }
+  const ink = levelsFor(hist, w * h).white - 30;           // "ink" = clearly darker than this page's paper
+  const rows = new Uint32Array(h), cols = new Uint32Array(w);
+  for (let y = 0, j = 0; y < h; y++) for (let x = 0; x < w; x++, j++) {
+    if (L[j] < ink) { rows[y]++; cols[x]++; }
+  }
+  release(c);
+  const rMin = Math.max(1, w * 0.004), cMin = Math.max(1, h * 0.004);
+  let y0 = 0, y1 = h - 1, x0 = 0, x1 = w - 1;
+  while (y0 < h && rows[y0] < rMin) y0++;
+  while (y1 > y0 && rows[y1] < rMin) y1--;
+  while (x0 < w && cols[x0] < cMin) x0++;
+  while (x1 > x0 && cols[x1] < cMin) x1--;
+  if (y0 >= h || x0 >= w) return null;                                 // blank page: leave it alone
+  const pad = 0.012 * Math.max(w, h);
+  const box = { x: Math.max(0, x0 - pad) / s, y: Math.max(0, y0 - pad) / s,
+                x2: Math.min(w, x1 + 1 + pad) / s, y2: Math.min(h, y1 + 1 + pad) / s };
+  if ((box.x2 - box.x) * (box.y2 - box.y) < 0.04 * src.width * src.height) return null;   // a speck, not a page
+  return box;
+}
+function crop(src, b) {
+  const c = newCanvas(b.x2 - b.x, b.y2 - b.y);
+  ctx2d(c).drawImage(src, b.x, b.y, c.width, c.height, 0, 0, c.width, c.height);
+  return c;
+}
+function trimmed(src) { const b = inkBox(src); return b ? crop(src, b) : src; }
+function rotateCW(src) {
+  const c = newCanvas(src.height, src.width), g = ctx2d(c);
+  g.translate(c.width, 0); g.rotate(Math.PI / 2); g.drawImage(src, 0, 0);
+  return c;
+}
+function half(src, right) {
+  const hw = Math.floor(src.width / 2), c = newCanvas(right ? src.width - hw : hw, src.height);
+  ctx2d(c).drawImage(src, right ? hw : 0, 0, c.width, c.height, 0, 0, c.width, c.height);
+  return c;
+}
+// Downscale in halving steps first so fine linework doesn't alias.
+function scaled(src, w, h) {
+  let cur = src;
+  while (cur.width / 2 > w && cur.height / 2 > h) {
+    const n = newCanvas(cur.width / 2, cur.height / 2), g = ctx2d(n);
+    g.imageSmoothingQuality = "high"; g.drawImage(cur, 0, 0, n.width, n.height);
+    if (cur !== src) release(cur);
+    cur = n;
+  }
+  return cur;
+}
+function fitTo(src, W, H, mode) {
+  const sw = src.width, sh = src.height;
+  const s = mode === "width" ? W / sw : mode === "screen" ? Math.max(W / sw, H / sh) : Math.min(W / sw, H / sh);
+  const dw = sw * s, dh = sh * s;
+  const out = newCanvas(W, H), g = ctx2d(out);
+  g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
+  const step = scaled(src, dw, dh);
+  g.imageSmoothingQuality = "high";
+  g.drawImage(step, (W - dw) / 2, (H - dh) / 2, dw, dh);
+  if (step !== src) release(step);
+  return out;
+}
+
+// Atkinson dithering, the same family CrossPoint uses for its own images. It keeps highlights
+// and shadows clean (only 3/4 of the error spreads), which suits flat comic art on e-paper.
+// Result: one value per pixel, 0 = black, 1 = dark gray, 2 = light gray, 3 = white.
+//
+// Before dithering, each page gets automatic levels: the paper tone (scans are often off-white or gray)
+// is taken to clean white and the darkest ink to black, so the background doesn't fill with dots.
+// Pages that are already white and black come through unchanged.
+function levelsFor(hist, total) {
+  let acc = 0, black = 0, paper = 255, bright = 0;
+  for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc >= total * 0.005) { black = v; break; } }
+  // Paper is measured among the light pixels only, so a mostly dark page keeps its tones.
+  for (let v = 190; v < 256; v++) bright += hist[v];
+  if (bright >= total * 0.05) {
+    acc = 0;
+    for (let v = 190; v < 256; v++) { acc += hist[v]; if (acc >= bright * 0.75) { paper = v; break; } }
+  }
+  const white = Math.max(200, Math.min(255, paper - 4));
+  black = Math.min(70, black, white - 100);
+  return { black, white };
+}
+function quantize(canvas, fmt) {
+  const W = canvas.width, H = canvas.height;
+  const p = ctx2d(canvas).getImageData(0, 0, W, H).data;
+  const buf = new Float32Array(W * (H + 2) + 2), hist = new Uint32Array(256);
+  for (let i = 0, j = 0; j < W * H; i += 4, j++) { const l = lum(p, i); buf[j] = l; hist[l]++; }
+  const { black, white } = levelsFor(hist, W * H), k = 255 / (white - black);
+  for (let j = 0; j < W * H; j++) {
+    let v = (buf[j] - black) * k;
+    buf[j] = v >= 238 ? 255 : v <= 14 ? 0 : v;               // small dead zones keep paper and ink solid
+  }
+  const n = fmt === "xtch" ? 4 : 2, stepV = 255 / (n - 1), out = new Uint8Array(W * H);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const j = y * W + x, v = buf[j];
+    const q = Math.max(0, Math.min(n - 1, Math.round(v / stepV)));
+    out[j] = fmt === "xtch" ? q : q * 3;
+    const e = (v - q * stepV) / 8;
+    if (x + 1 < W) buf[j + 1] += e;
+    if (x + 2 < W) buf[j + 2] += e;
+    if (y + 1 < H) { if (x > 0) buf[j + W - 1] += e; buf[j + W] += e; if (x + 1 < W) buf[j + W + 1] += e; }
+    if (y + 2 < H) buf[j + 2 * W] += e;
+  }
+  return out;
+}
+
+// One source page → one or two screen pages.
+function processPage(raster, o) {
+  let src = o.trim === "auto" ? trimmed(raster) : raster;
+  const wide = src.width > src.height * 1.05;
+  let parts;
+  if (!wide || o.spread === "keep") parts = [src];
+  else if (o.spread === "rotate") parts = [rotateCW(src)];
+  else {
+    const l = half(src, false), r = half(src, true);
+    parts = (o.dir === "rtl" ? [r, l] : [l, r]).map(c => o.trim === "auto" ? trimmed(c) : c);
+  }
+  const out = parts.map(c => quantize(fitTo(c, o.W, o.H, o.fit), o.fmt));
+  return out;
+}
+
+// ---------------------------------------------------------------- XTC / XTCH writer
+// Layout follows CrossPoint's own reader (lib/Xtc and XtcReaderActivity), not the third-party spec.
+//   XTG (1-bit): row-major, 8 px per byte, MSB first, bit 1 = white.
+//   XTH (2-bit): two bit planes, column-major starting from the RIGHTMOST column, 8 vertical px per byte,
+//                MSB = top. Pixel value = (plane1 bit << 1) | plane2 bit, where
+//                0 = white, 1 = dark gray, 2 = light gray, 3 = black (not in order of darkness).
+const XTH_FROM_LEVEL = [3, 1, 2, 0];   // our level (0 black … 3 white) → XTH value
+
+function encodePage(levels, W, H, fmt) {
+  const two = fmt === "xtch";
+  const colBytes = (H + 7) >> 3, rowBytes = (W + 7) >> 3;
+  const bitmap = two ? W * colBytes * 2 : rowBytes * H;
+  const page = new Uint8Array(22 + bitmap), v = new DataView(page.buffer);
+  v.setUint32(0, two ? 0x00485458 : 0x00475458, true);    // "XTH\0" / "XTG\0"
+  v.setUint16(4, W, true); v.setUint16(6, H, true);
+  v.setUint8(8, 0); v.setUint8(9, 0);                     // color mode, compression
+  v.setUint32(10, bitmap, true);                          // bitmap size (md5 at 14 left zero)
+  const d = page.subarray(22);
+  if (two) {
+    const plane = W * colBytes;
+    for (let y = 0; y < H; y++) {
+      const byteY = y >> 3, bit = 7 - (y & 7);
+      for (let x = 0; x < W; x++) {
+        const pv = XTH_FROM_LEVEL[levels[y * W + x]];
+        if (!pv) continue;
+        const k = (W - 1 - x) * colBytes + byteY;
+        if (pv & 2) d[k] |= 1 << bit;
+        if (pv & 1) d[plane + k] |= 1 << bit;
+      }
+    }
+  } else {
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      if (levels[y * W + x] === 3) d[y * rowBytes + (x >> 3)] |= 0x80 >> (x & 7);
+    }
+  }
+  return page;
+}
+
+// Header (56 B) · title at 0x38 (128 B) · author at 0xB8 (64 B) · page table (16 B each) · pages.
+function buildFile(pages, W, H, fmt, title, dir) {
+  const n = pages.length, tableOff = 0xF8, dataOff = tableOff + 16 * n;
+  const head = new Uint8Array(dataOff), v = new DataView(head.buffer);
+  v.setUint32(0x00, fmt === "xtch" ? 0x48435458 : 0x00435458, true);   // "XTCH" / "XTC\0"
+  v.setUint8(0x04, 1); v.setUint8(0x05, 0);                            // version 1.0
+  v.setUint16(0x06, n, true);
+  v.setUint8(0x08, dir === "rtl" ? 1 : 0);                             // reading direction
+  v.setUint8(0x09, 1); v.setUint8(0x0A, 0); v.setUint8(0x0B, 0);       // metadata, no thumbnails, no chapters
+  v.setUint32(0x0C, 0, true);
+  v.setBigUint64(0x10, 0x38n, true);
+  v.setBigUint64(0x18, BigInt(tableOff), true);
+  v.setBigUint64(0x20, BigInt(dataOff), true);
+  v.setBigUint64(0x28, 0n, true);
+  head.set(utf8Max(title, 127), 0x38);
+  let off = dataOff;
+  pages.forEach((pg, i) => {
+    const e = tableOff + i * 16;
+    v.setBigUint64(e, BigInt(off), true);
+    v.setUint32(e + 8, pg.length, true);
+    v.setUint16(e + 12, W, true); v.setUint16(e + 14, H, true);
+    off += pg.length;
+  });
+  return new Blob([head, ...pages], { type: "application/octet-stream" });
+}
+function utf8Max(s, max) {
+  const enc = new TextEncoder();
+  let out = enc.encode(s);
+  while (out.length > max) { s = s.slice(0, -1); out = enc.encode(s); }
+  return out;
+}
+
+// ---------------------------------------------------------------- preview
+const screen = $("#screen");
+let preview = { src: 0, sub: 0, parts: null, key: "" }, previewSeq = 0;
+
+function opts() {
+  const { W, H } = size();
+  return { W, H, fmt: state.fmt, fit: state.fit, trim: state.trim, spread: state.spread, dir: state.dir };
+}
+function workSide(o) { return Math.round(2.5 * Math.max(o.W, o.H)); }
+
+function drawLevels(levels, W, H) {
+  if (screen.width !== W || screen.height !== H) { screen.width = W; screen.height = H; }
+  const g = screen.getContext("2d"), img = g.createImageData(W, H), p = img.data;
+  for (let j = 0, i = 0; j < levels.length; j++, i += 4) { const c = levels[j] * 85; p[i] = p[i + 1] = p[i + 2] = c; p[i + 3] = 255; }
+  g.putImageData(img, 0, 0);
+}
+function drawEmpty() {
+  const { W, H } = size();
+  screen.width = W; screen.height = H;
+  const g = screen.getContext("2d");
+  g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
+  g.strokeStyle = "#aaa"; g.lineWidth = 2; g.setLineDash([10, 8]);
+  g.strokeRect(40, 40, W - 80, H - 80);
+  g.fillStyle = "#555"; g.textAlign = "center"; g.textBaseline = "middle";
+  g.font = '700 26px "IBM Plex Sans Condensed", sans-serif';
+  g.fillText(t("drawHint"), W / 2, H / 2);
+}
+
+async function renderPreview() {
+  const seq = ++previewSeq;
+  if (!source) { drawEmpty(); updatePager(); return; }
+  const o = opts(), key = JSON.stringify(o) + "|" + preview.src;
+  if (preview.key !== key) {
+    if (!running) say(t("previewing"));
+    let raster;
+    try { raster = await source.raster(preview.src, workSide(o)); }
+    catch (e) { if (seq === previewSeq) { say(t("pageFail")(preview.src + 1)); } return; }
+    if (seq !== previewSeq) { release(raster); return; }
+    const parts = processPage(raster, o);
+    release(raster);
+    if (seq !== previewSeq) return;
+    preview.parts = parts; preview.key = key;
+    if (!running) say("");
+  }
+  preview.sub = Math.min(preview.sub, preview.parts.length - 1);
+  drawLevels(preview.parts[preview.sub], o.W, o.H);
+  updatePager();
+}
+function updatePager() {
+  const has = !!source;
+  $("#prev").disabled = !has || running || (preview.src === 0 && preview.sub === 0);
+  $("#next").disabled = !has || running || (preview.src >= source.count - 1 && (!preview.parts || preview.sub >= preview.parts.length - 1));
+  let label = t("empty");
+  if (has) {
+    label = `${t("page")} ${preview.src + 1} / ${source.count}`;
+    if (preview.parts && preview.parts.length > 1) label += ` · ${t("split")(preview.sub + 1, preview.parts.length)}`;
+  }
+  $("#pageno").textContent = label;
+}
+$("#prev").addEventListener("click", () => {
+  if (preview.sub > 0) { preview.sub--; renderPreview(); return; }
+  if (preview.src > 0) { preview.src--; preview.sub = 99; preview.key = ""; renderPreview(); }
+});
+$("#next").addEventListener("click", () => {
+  if (preview.parts && preview.sub < preview.parts.length - 1) { preview.sub++; renderPreview(); return; }
+  if (source && preview.src < source.count - 1) { preview.src++; preview.sub = 0; preview.key = ""; renderPreview(); }
+});
+
+// ---------------------------------------------------------------- open a file
+let fileMeta = null;
+async function openFile(file) {
+  if (running) return;
+  const name = file.name || "", isPdf = /\.pdf$/i.test(name) || file.type === "application/pdf";
+  const isCbz = /\.cbz$/i.test(name) || (/\.zip$/i.test(name));
+  if (!isPdf && !isCbz) { say(t("badType")); return; }
+  say(t("loading"));
+  if (source) { try { source.close(); } catch (e) {} }
+  source = null; preview = { src: 0, sub: 0, parts: null, key: "" };
+  try { source = isPdf ? await openPdf(file) : await openCbz(file); }
+  catch (e) { say(t((e && e.code) || "openFail")); fileMeta = null; refresh(); drawEmpty(); return; }
+  const base = name.replace(/\.[^.]+$/, "");
+  fileMeta = { name, base, size: file.size };
+  $("#booktitle").value = base.replace(/[_]+/g, " ").trim();
+  $("#bigwarn").hidden = file.size < 50 * 1024 * 1024;
+  say("");
+  refresh();
+  renderPreview();
+}
+const fileInput = $("#file"), drop = $("#drop");
+fileInput.addEventListener("change", () => { if (fileInput.files[0]) openFile(fileInput.files[0]); fileInput.value = ""; });
+["dragenter", "dragover"].forEach(ev => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach(ev => drop.addEventListener(ev, () => drop.classList.remove("over")));
+drop.addEventListener("drop", (e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) openFile(f); });
+// Dropping anywhere else on the page shouldn't navigate away from it.
+window.addEventListener("dragover", (e) => e.preventDefault());
+window.addEventListener("drop", (e) => { e.preventDefault(); const f = e.dataTransfer && e.dataTransfer.files[0]; if (f) openFile(f); });
+
+// ---------------------------------------------------------------- convert
+let running = false, cancelRequested = false;
+function slug(s) {
+  return (s || "pages").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "pages";
+}
+function outName() {
+  const d = device(), { W, H } = size();
+  const tag = d.id === "custom" ? `${W}x${H}` : d.id;
+  return `${slug(fileMeta ? fileMeta.base : "pages")}-${tag}.${state.fmt}`;
+}
+const tick = () => new Promise(r => setTimeout(r, 0));
+
+$("#go").addEventListener("click", async () => {
+  if (!source || running) return;
+  running = true; cancelRequested = false; refresh();
+  const o = opts(), n = source.count, pages = [], side = workSide(o);
+  const name = outName(), title = $("#booktitle").value.trim() || (fileMeta && fileMeta.base) || "Pages";
+  $("#bar").hidden = false; setBar(0);
+  try {
+    for (let i = 0; i < n; i++) {
+      if (cancelRequested) { say(t("cancelled")); return; }
+      say(t("converting")(i + 1, n));
+      let parts;
+      try { const r = await source.raster(i, side); parts = processPage(r, o); release(r); }
+      catch (e) { parts = [new Uint8Array(o.W * o.H).fill(3)]; console.warn(t("pageFail")(i + 1), e); }
+      for (const lv of parts) pages.push(encodePage(lv, o.W, o.H, o.fmt));
+      if (pages.length > 65535) { say(t("tooMany")); return; }
+      drawLevels(parts[0], o.W, o.H);
+      preview.src = i; preview.sub = 0; preview.parts = parts; preview.key = JSON.stringify(o) + "|" + i;
+      updatePager(); setBar((i + 1) / n);
+      await tick();
+    }
+    say(t("building"));
+    await tick();
+    const blob = buildFile(pages, o.W, o.H, o.fmt, title, o.dir);
+    const total = pages.length;
+    pages.length = 0;
+    await deliver(name, blob, () => t("done")(name, total, bytes(blob.size)));
+  } finally {
+    running = false; refresh(); updatePager();
+  }
+});
+$("#cancel").addEventListener("click", () => { cancelRequested = true; });
+function setBar(f) { $("#barfill").style.width = `${Math.round(f * 100)}%`; }
+
+// Inside the Claude viewer, files go through its download prompt (only some types are allowed there,
+// so the file is zipped). Everywhere else — GitHub Pages, a local copy — a normal browser download.
+let dlApi;
+const inViewer = !!(window.claude && window.claude.use);
+const viewerReady = inViewer ? window.claude.use("downloads").then(d => (dlApi = d)).catch(() => null) : Promise.resolve(null);
+
+async function deliver(name, blob, doneMsg) {
+  await viewerReady;
+  if (dlApi) {
+    let n = name, b = blob;
+    if (!/\.(png|zip)$/i.test(n)) {
+      const z = new JSZip(); z.file(n, b);
+      b = await z.generateAsync({ type: "blob" });
+      n = n.replace(/\.[a-z]+$/i, ".zip");
+    }
+    try { await dlApi.save({ filename: n, data: b }); say(doneMsg() + " · " + t("zipped")); }
+    catch (e) { say(e && e.code === "declined" ? t("declined") : t("failed") + (e && e.message || e)); }
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  say(doneMsg());
+}
+
+// ---------------------------------------------------------------- UI wiring
+function say(s) { $("#status").textContent = s; }
+function bytes(n) { return n < 1048576 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1048576).toFixed(1)} MB`; }
+function check(name, value) { const el = document.querySelector(`input[name="${name}"][value="${value}"]`); if (el) el.checked = true; }
+
+function applyUI() {
+  document.documentElement.lang = state.ui;
+  document.title = t("title");
+  document.querySelectorAll("[data-t]").forEach(el => { const v = t(el.dataset.t); if (typeof v === "string") el.innerHTML = v; });
+  const sel = $("#device");
+  sel.innerHTML = DEVICES.map(d => `<option value="${d.id}">${d.id === "custom" ? t("custom") : `${d.name} — ${d.w} × ${d.h}`}</option>`).join("");
+  sel.value = state.device;
+  ["ui", "fmt", "fit", "trim", "spread", "dir"].forEach(k => check(k, state[k]));
+}
+
+function refresh() {
+  const { W, H } = size(), d = device();
+  $("#custom").hidden = d.id !== "custom";
+  $("#cw").value = state.cw; $("#ch").value = state.ch;
+  $("#spec").textContent = `${d.id === "custom" ? t("custom") : d.short} · ${W} × ${H} · ${state.fmt === "xtch" ? t("specGray") : t("specBw")}`;
+  screen.style.aspectRatio = `${W} / ${H}`;
+  const fi = $("#fileinfo");
+  fi.hidden = !fileMeta || !source;
+  if (fileMeta && source) fi.textContent = `${fileMeta.name} · ${t("pages")(source.count)} · ${bytes(fileMeta.size)}`;
+  $("#outname").textContent = source ? outName() : "";
+  $("#caption").textContent = `${source ? outName() + " · " : ""}${W} × ${H}`;
+  $("#go").disabled = !source || running;
+  $("#cancel").hidden = !running;
+  if (!running) $("#bar").hidden = true;
+  drop.style.pointerEvents = running ? "none" : "";
+  document.querySelectorAll(".controls input, .controls select").forEach(el => { if (el.id !== "file") el.disabled = running; });
+  // per-page sizes for the format explainer
+  const kbH = (W * ((H + 7) >> 3) * 2 + 38) / 1024, kbB = (((W + 7) >> 3) * H + 38) / 1024;
+  const n = source ? source.count : 0;
+  const book = (kb) => n ? t("perBook")(((kb * n) / 1024).toFixed(1), n) : "";
+  $("#size-xtch").textContent = t("perPage")(Math.round(kbH), devLabel()) + book(kbH);
+  $("#size-xtc").textContent = t("perPage")(Math.round(kbB), devLabel()) + book(kbB);
+  persist();
+}
+
+let previewTimer;
+function changed(rerender = true) {
+  refresh();
+  if (!rerender) return;
+  preview.key = "";
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(renderPreview, 120);
+}
+
+document.addEventListener("change", (e) => {
+  const el = e.target;
+  if (el.name === "ui") { state.ui = el.value; applyUI(); changed(false); updatePager(); if (!source) drawEmpty(); return; }
+  if (["fmt", "fit", "trim", "spread", "dir"].includes(el.name)) { state[el.name] = el.value; changed(); }
+  if (el.id === "device") { state.device = el.value; changed(); }
+  if (el.id === "cw" || el.id === "ch") { state[el.id] = clampSize(el.value); changed(); }
+});
+applyUI();
+refresh();
+drawEmpty();
+updatePager();
+document.fonts.load('700 26px "IBM Plex Sans Condensed"').then(() => { if (!source) drawEmpty(); });
+if (!window.pdfjsLib) say(t("noLib"));
+</script>
+</body>
+</html>
