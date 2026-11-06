@@ -20,8 +20,9 @@ Everything runs in your browser. The file is never uploaded, and there is no ser
 
 1. Drop a PDF or CBZ on the page.
 2. Pick your **device**. The preview shows the exact pixels your reader will display.
-3. Choose the options below, check a few pages with the arrows, then **Convert and download**.
-4. Copy the file to the SD card, for example to a `/comics` folder, and open it from **Browse Files** on the reader.
+3. Choose the options below and check a few pages with the arrows. The final file size shows above the button before you convert.
+4. **Convert and download**.
+5. Copy the file to the SD card, for example to a `/comics` folder, and open it from **Browse Files** on the reader.
 
 ## Devices
 
@@ -42,6 +43,7 @@ CrossPoint draws each page pixel for pixel without scaling, so the file has to m
 
 - **Format:** XTCH (4 grays) or XTC (black and white). See below.
 - **Page fit:** *Whole page* never cuts anything. *Fill width* and *Fill screen* make the page bigger and crop the edges.
+- **Background:** white or black, for the space around the page when it doesn't fill the screen.
 - **Margins:** *Trim white margins* removes the empty border around each page so the art is larger on the small screen.
 - **Wide pages:** for double-page spreads. *Rotate* turns them sideways to fill the screen; *Split in two* makes two pages.
 - **Reading direction:** left to right, or right to left for manga. It sets the order of split pages.

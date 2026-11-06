@@ -20,8 +20,9 @@ Todo corre en tu navegador. El archivo nunca se sube a ningún lado; no hay serv
 
 1. Suelta un PDF o CBZ en la página.
 2. Elige tu **dispositivo**. La vista previa muestra exactamente los píxeles que verás en el lector.
-3. Elige las opciones de abajo, revisa algunas páginas con las flechas y presiona **Convertir y descargar**.
-4. Copia el archivo a la tarjeta SD, por ejemplo a una carpeta `/comics`, y ábrelo desde **Browse Files** en el lector.
+3. Elige las opciones de abajo y revisa algunas páginas con las flechas. El tamaño del archivo final aparece arriba del botón antes de convertir.
+4. Presiona **Convertir y descargar**.
+5. Copia el archivo a la tarjeta SD, por ejemplo a una carpeta `/comics`, y ábrelo desde **Browse Files** en el lector.
 
 ## Dispositivos
 
@@ -42,6 +43,7 @@ CrossPoint dibuja cada página píxel por píxel, sin escalar, así que el archi
 
 - **Formato:** XTCH (4 grises) o XTC (blanco y negro). Ver abajo.
 - **Ajuste de página:** *Página completa* nunca recorta nada. *Llenar ancho* y *Llenar pantalla* hacen la página más grande y recortan las orillas.
+- **Fondo:** blanco o negro, para el espacio alrededor de la página cuando no llena la pantalla.
 - **Márgenes:** *Recortar márgenes blancos* quita el borde vacío de cada página para que el dibujo se vea más grande en la pantalla chica.
 - **Páginas anchas:** para páginas dobles. *Rotar* las acuesta para llenar la pantalla; *Partir en dos* las convierte en dos páginas.
 - **Sentido de lectura:** izquierda a derecha, o derecha a izquierda para manga. Define el orden de las páginas partidas.

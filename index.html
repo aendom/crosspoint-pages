@@ -102,6 +102,7 @@ select { min-width: 280px; justify-self: start; }
 .btn:disabled { opacity: .5; cursor: not-allowed; filter: none; }
 .bar { height: 10px; max-width: 440px; border: 1.5px solid var(--ink); background: var(--panel); }
 .bar i { display: block; height: 100%; width: 0; background: var(--ink); }
+.estimate { font: 500 13px/1.4 var(--f-mono); color: var(--ink); margin: 0; max-width: 440px; }
 .status { font: 400 13px/1.4 var(--f-mono); color: var(--muted); min-height: 1.4em; margin: 0; max-width: 440px; }
 
 .howto { background: var(--panel); border: 1px solid var(--rule); padding: 18px 20px; display: grid; gap: 10px; max-width: 520px; }
@@ -205,6 +206,15 @@ footer a, .hint a { color: var(--ink); }
       </div>
 
       <div class="field">
+        <span class="label" data-t="bg">Background</span>
+        <div class="seg" role="radiogroup">
+          <input type="radio" name="bg" id="bg-white" value="white"><label for="bg-white" data-t="bgWhite">White</label>
+          <input type="radio" name="bg" id="bg-black" value="black"><label for="bg-black" data-t="bgBlack">Black</label>
+        </div>
+        <p class="hint" data-t="bgHint">The color around the page when it doesn't fill the whole screen.</p>
+      </div>
+
+      <div class="field">
         <span class="label" data-t="trim">Margins</span>
         <div class="seg" role="radiogroup">
           <input type="radio" name="trim" id="t-auto" value="auto"><label for="t-auto" data-t="trimAuto">Trim white margins</label>
@@ -236,6 +246,7 @@ footer a, .hint a { color: var(--ink); }
       </div>
 
       <div class="download">
+        <p class="estimate" id="estimate" hidden></p>
         <button class="btn" id="go" type="button" disabled><span data-t="go">Convert and download</span><small id="outname"></small></button>
         <button class="btn secondary" id="cancel" type="button" hidden><span data-t="cancel">Cancel</span></button>
         <div class="bar" id="bar" hidden><i id="barfill"></i></div>
@@ -304,6 +315,11 @@ const UI = {
     deviceHint: "CrossPoint shows each page pixel for pixel without scaling, so the file must match your screen.",
     format: "Format", fXtch: "XTCH · 4 grays", fXtc: "XTC · black and white",
     fmtHint: "Not sure? Keep XTCH.", fmtMore: "What's the difference?",
+    bg: "Background", bgWhite: "White", bgBlack: "Black",
+    bgHint: "The color around the page when it doesn't fill the whole screen.",
+    estExact: (sz, n) => `Final file: ${sz} · ${n} pages`,
+    estAbout: (sz, n) => `Final file: about ${sz} · about ${n} pages`,
+    estRange: (a, b) => `Final file: ${a} to ${b}, depending on how many pages are wide`,
     fit: "Page fit", fitFit: "Whole page", fitW: "Fill width", fitS: "Fill screen",
     fitHint: "Whole page never cuts anything. The fill options make the page bigger and crop the edges.",
     trim: "Margins", trimAuto: "Trim white margins", trimKeep: "Keep",
@@ -324,7 +340,7 @@ const UI = {
     xtcName: "XTC · black and white",
     xtcBody: "Each pixel is pure black or white, and grays are simulated with a fine dot pattern. Files are smaller and pages turn faster. Best for line art, text and high-contrast comics.",
     perPage: (kb, dev) => `About ${kb} KB per page on the ${dev}.`,
-    perBook: (mb, n) => ` About ${mb} MB for your ${n} pages.`,
+    perBook: (sz, n) => ` About ${sz} for your ${n} pages.`,
     foot: 'Made for <a href="https://crosspointreader.com/" target="_blank" rel="noopener">CrossPoint Reader</a>. Not affiliated with the project.',
     specGray: "XTCH (4 grays)", specBw: "XTC (black and white)",
     pages: (n) => `${n} page${n === 1 ? "" : "s"}`,
@@ -355,6 +371,11 @@ const UI = {
     deviceHint: "CrossPoint muestra cada página píxel por píxel, sin escalar, así que el archivo tiene que coincidir con tu pantalla.",
     format: "Formato", fXtch: "XTCH · 4 grises", fXtc: "XTC · blanco y negro",
     fmtHint: "¿No sabes cuál? Deja XTCH.", fmtMore: "¿Cuál es la diferencia?",
+    bg: "Fondo", bgWhite: "Blanco", bgBlack: "Negro",
+    bgHint: "El color alrededor de la página cuando no llena toda la pantalla.",
+    estExact: (sz, n) => `Archivo final: ${sz} · ${n} páginas`,
+    estAbout: (sz, n) => `Archivo final: unos ${sz} · unas ${n} páginas`,
+    estRange: (a, b) => `Archivo final: de ${a} a ${b}, según cuántas páginas sean anchas`,
     fit: "Ajuste de página", fitFit: "Página completa", fitW: "Llenar ancho", fitS: "Llenar pantalla",
     fitHint: "Página completa nunca recorta nada. Las opciones de llenar hacen la página más grande y recortan las orillas.",
     trim: "Márgenes", trimAuto: "Recortar márgenes blancos", trimKeep: "Conservar",
@@ -375,7 +396,7 @@ const UI = {
     xtcName: "XTC · blanco y negro",
     xtcBody: "Cada píxel es negro o blanco puro, y los grises se simulan con un patrón de puntos fino. Los archivos pesan menos y las páginas pasan más rápido. Ideal para dibujo de línea, texto y comics de alto contraste.",
     perPage: (kb, dev) => `Unos ${kb} KB por página en el ${dev}.`,
-    perBook: (mb, n) => ` Unos ${mb} MB para tus ${n} páginas.`,
+    perBook: (sz, n) => ` Unos ${sz} para tus ${n} páginas.`,
     foot: 'Hecho para <a href="https://crosspointreader.com/" target="_blank" rel="noopener">CrossPoint Reader</a>. Sin relación oficial con el proyecto.',
     specGray: "XTCH (4 grises)", specBw: "XTC (blanco y negro)",
     pages: (n) => `${n} página${n === 1 ? "" : "s"}`,
@@ -413,7 +434,7 @@ const DEVICES = [
 
 // ---------------------------------------------------------------- state
 const $ = (s) => document.querySelector(s);
-const state = { ui: null, device: "x4", cw: 480, ch: 800, fmt: "xtch", fit: "fit", trim: "auto", spread: "rotate", dir: "ltr" };
+const state = { ui: null, device: "x4", cw: 480, ch: 800, fmt: "xtch", fit: "fit", trim: "auto", spread: "rotate", dir: "ltr", bg: "white" };
 try { const saved = JSON.parse(localStorage.getItem("cp-pages") || "null"); if (saved) Object.assign(state, saved); }
 catch (e) { /* storage unavailable: defaults */ }
 if (!UI[state.ui]) state.ui = (navigator.language || "en").slice(0, 2) === "es" ? "es" : "en";
@@ -450,8 +471,8 @@ async function openPdf(file) {
   let doc;
   try { doc = await pdfjsLib.getDocument({ data, isEvalSupported: false }).promise; }
   catch (e) { throw { code: e && e.name === "PasswordException" ? "password" : "openFail" }; }
-  return {
-    kind: "pdf", count: doc.numPages,
+  const src = {
+    kind: "pdf", count: doc.numPages, wide: null,
     async raster(i, side) {
       const page = await doc.getPage(i + 1);
       const v1 = page.getViewport({ scale: 1 });
@@ -467,6 +488,18 @@ async function openPdf(file) {
     },
     close() { doc.destroy(); },
   };
+  (async () => {                                          // page sizes only, no rendering: fast
+    let wide = 0;
+    try {
+      for (let i = 1; i <= doc.numPages; i++) {
+        const v = (await doc.getPage(i)).getViewport({ scale: 1 });
+        if (v.width > v.height * 1.05) wide++;
+      }
+      src.wide = wide;
+      if (source === src) refresh();
+    } catch (e) { /* estimate stays a range */ }
+  })();
+  return src;
 }
 
 async function openCbz(file) {
@@ -478,7 +511,7 @@ async function openCbz(file) {
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
   if (!names.length) throw { code: "noImages" };
   return {
-    kind: "cbz", count: names.length,
+    kind: "cbz", count: names.length, wide: null,
     async raster(i, side) {
       const blob = await zip.files[names[i]].async("blob");
       const bmp = await createImageBitmap(blob);
@@ -552,12 +585,12 @@ function scaled(src, w, h) {
   }
   return cur;
 }
-function fitTo(src, W, H, mode) {
+function fitTo(src, W, H, mode, bg) {
   const sw = src.width, sh = src.height;
   const s = mode === "width" ? W / sw : mode === "screen" ? Math.max(W / sw, H / sh) : Math.min(W / sw, H / sh);
   const dw = sw * s, dh = sh * s;
   const out = newCanvas(W, H), g = ctx2d(out);
-  g.fillStyle = "#fff"; g.fillRect(0, 0, W, H);
+  g.fillStyle = bg === "black" ? "#000" : "#fff"; g.fillRect(0, 0, W, H);
   const step = scaled(src, dw, dh);
   g.imageSmoothingQuality = "high";
   g.drawImage(step, (W - dw) / 2, (H - dh) / 2, dw, dh);
@@ -620,7 +653,7 @@ function processPage(raster, o) {
     const l = half(src, false), r = half(src, true);
     parts = (o.dir === "rtl" ? [r, l] : [l, r]).map(c => o.trim === "auto" ? trimmed(c) : c);
   }
-  const out = parts.map(c => quantize(fitTo(c, o.W, o.H, o.fit), o.fmt));
+  const out = parts.map(c => quantize(fitTo(c, o.W, o.H, o.fit, o.bg), o.fmt));
   return out;
 }
 
@@ -687,6 +720,8 @@ function buildFile(pages, W, H, fmt, title, dir) {
   });
   return new Blob([head, ...pages], { type: "application/octet-stream" });
 }
+function pageBytes(W, H, fmt) { return 22 + (fmt === "xtch" ? W * ((H + 7) >> 3) * 2 : ((W + 7) >> 3) * H); }
+function fileBytes(n, W, H, fmt) { return 0xF8 + n * (16 + pageBytes(W, H, fmt)); }
 function utf8Max(s, max) {
   const enc = new TextEncoder();
   let out = enc.encode(s);
@@ -700,7 +735,7 @@ let preview = { src: 0, sub: 0, parts: null, key: "" }, previewSeq = 0;
 
 function opts() {
   const { W, H } = size();
-  return { W, H, fmt: state.fmt, fit: state.fit, trim: state.trim, spread: state.spread, dir: state.dir };
+  return { W, H, fmt: state.fmt, fit: state.fit, trim: state.trim, spread: state.spread, dir: state.dir, bg: state.bg };
 }
 function workSide(o) { return Math.round(2.5 * Math.max(o.W, o.H)); }
 
@@ -875,7 +910,7 @@ function applyUI() {
   const sel = $("#device");
   sel.innerHTML = DEVICES.map(d => `<option value="${d.id}">${d.id === "custom" ? t("custom") : `${d.name} — ${d.w} × ${d.h}`}</option>`).join("");
   sel.value = state.device;
-  ["ui", "fmt", "fit", "trim", "spread", "dir"].forEach(k => check(k, state[k]));
+  ["ui", "fmt", "fit", "trim", "spread", "dir", "bg"].forEach(k => check(k, state[k]));
 }
 
 function refresh() {
@@ -894,12 +929,20 @@ function refresh() {
   if (!running) $("#bar").hidden = true;
   drop.style.pointerEvents = running ? "none" : "";
   document.querySelectorAll(".controls input, .controls select").forEach(el => { if (el.id !== "file") el.disabled = running; });
-  // per-page sizes for the format explainer
-  const kbH = (W * ((H + 7) >> 3) * 2 + 38) / 1024, kbB = (((W + 7) >> 3) * H + 38) / 1024;
+  // Every page has the same size, so the final file size is known before converting.
+  // Only "Split in two" depends on how many pages are wide.
   const n = source ? source.count : 0;
-  const book = (kb) => n ? t("perBook")(((kb * n) / 1024).toFixed(1), n) : "";
-  $("#size-xtch").textContent = t("perPage")(Math.round(kbH), devLabel()) + book(kbH);
-  $("#size-xtc").textContent = t("perPage")(Math.round(kbB), devLabel()) + book(kbB);
+  const est = $("#estimate");
+  est.hidden = !source || running;
+  if (source) {
+    if (state.spread !== "split") est.textContent = t("estExact")(bytes(fileBytes(n, W, H, state.fmt)), n);
+    else if (source.wide != null) est.textContent = t("estAbout")(bytes(fileBytes(n + source.wide, W, H, state.fmt)), n + source.wide);
+    else est.textContent = t("estRange")(bytes(fileBytes(n, W, H, state.fmt)), bytes(fileBytes(2 * n, W, H, state.fmt)));
+  }
+  const per = (fmt) => Math.round((pageBytes(W, H, fmt) + 16) / 1024);
+  const book = (fmt) => n ? t("perBook")(bytes(fileBytes(n, W, H, fmt)), n) : "";
+  $("#size-xtch").textContent = t("perPage")(per("xtch"), devLabel()) + book("xtch");
+  $("#size-xtc").textContent = t("perPage")(per("xtc"), devLabel()) + book("xtc");
   persist();
 }
 
@@ -915,7 +958,7 @@ function changed(rerender = true) {
 document.addEventListener("change", (e) => {
   const el = e.target;
   if (el.name === "ui") { state.ui = el.value; applyUI(); changed(false); updatePager(); if (!source) drawEmpty(); return; }
-  if (["fmt", "fit", "trim", "spread", "dir"].includes(el.name)) { state[el.name] = el.value; changed(); }
+  if (["fmt", "fit", "trim", "spread", "dir", "bg"].includes(el.name)) { state[el.name] = el.value; changed(); }
   if (el.id === "device") { state.device = el.value; changed(); }
   if (el.id === "cw" || el.id === "ch") { state[el.id] = clampSize(el.value); changed(); }
 });
